@@ -32,7 +32,9 @@ jobs:
             git pull origin main
             npm ci
             npm run build
-            sudo mv ./out/~ /var/www/html/
+            cd out
+            sudo mv * /var/www/html/
+            cd /home/${{ secrets.USERNAME }}/Projects/toolkit_for_everything/toolkit_for_everything-web_frontend
             git switch dev
             git pull origin dev
           
