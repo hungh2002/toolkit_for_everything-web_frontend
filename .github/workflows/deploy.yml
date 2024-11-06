@@ -30,7 +30,7 @@ jobs:
             git pull origin main
             npm ci
             npm run build
-            mv ./out/~ /var/www/html/
+            sudo mv ./out/~ /var/www/html/
             git switch dev
             git pull origin dev
           
