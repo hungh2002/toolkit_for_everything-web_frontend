@@ -22,7 +22,7 @@ jobs:
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
-          password: ${{ secrets.PASSWORD }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           script: |
             cd /home/${{ secrets.USERNAME }}/Projects/toolkit_for_everything/toolkit_for_everything-web_frontend
