@@ -25,6 +25,8 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           script: |
+            sudo -E bash /home/${{ secrets.USERNAME }}/nodesource_setup.sh
+            sudo apt-get install -y nodejs
             cd /home/${{ secrets.USERNAME }}/Projects/toolkit_for_everything/toolkit_for_everything-web_frontend
             git switch main
             git pull origin main
