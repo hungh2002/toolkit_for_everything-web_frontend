@@ -1,7 +1,9 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { useUserStore } from "@/store/userStore";
 
 const UserAvatar = () => {
+  const user = useUserStore((state) => state.user);
   return (
     <Popover>
       <PopoverTrigger>
@@ -10,7 +12,7 @@ const UserAvatar = () => {
           <AvatarFallback>USER</AvatarFallback>
         </Avatar>
       </PopoverTrigger>
-      <PopoverContent>Place content for the popover here.</PopoverContent>
+      <PopoverContent>{user.userId}</PopoverContent>
     </Popover>
   );
 };

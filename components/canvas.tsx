@@ -4,17 +4,17 @@ import { Channel } from "@/config/type";
 import { PaintAction, usePaintStore } from "@/store/paintStore";
 import { useUserStore } from "@/store/userStore";
 import { useEffect, useRef, useState } from "react";
-import { useStompClient } from "react-stomp-hooks";
+import { useStompClient, useSubscription } from "react-stomp-hooks";
 
 const Canvas = () => {
-  const paint = usePaintStore((state) => state.paint);
-  const paintUpdate = usePaintStore((state) => state.paintUpdate);
   const user = useUserStore((state) => state.user);
-
-  let stompClient = user.isActive ? useStompClient() : undefined;
+  const paint = usePaintStore((state) => state.paint);
+  const [isPaint, setIsPaint] = useState(false);
 
   const canvas = useRef<HTMLCanvasElement>(null);
   const context = useRef<CanvasRenderingContext2D | null>(null);
+
+  let stompClient = user.isActive ? useStompClient() : undefined;
 
   useEffect(() => {
     if (!canvas.current) return;
@@ -28,72 +28,128 @@ const Canvas = () => {
     context.current.strokeStyle = paint.brush.lineColor;
     context.current.lineCap = paint.brush.lineCap;
   }, [
-    paint.boardSize.width,
+    paint.brush.lineWidth,
     paint.boardSize.height,
     paint.brush.lineWidth,
     paint.brush.lineColor,
     paint.brush.lineCap,
   ]);
 
-  const onMouseDown = (e: MouseEvent) => {
-    e.preventDefault();
+  const paintExcute = (message: {
+    deviceId: number;
+    paint: {
+      action: PaintAction;
+      position?: {
+        root?: { x: number; y: number };
+        current?: { x: number; y: number };
+      };
+    };
+  }) => {
+    if (user.deviceId == message.deviceId) return;
 
-    paintUpdate({ action: PaintAction.START });
-    context.current?.beginPath();
-    context.current?.moveTo(e.offsetX, e.offsetY);
+    switch (message.paint.action) {
+      case PaintAction.START:
+        context.current?.beginPath();
+        context.current?.moveTo(
+          message.paint.position!.root!.x,
+          message.paint.position!.root!.y
+        );
+        break;
 
-    if (stompClient) {
-      stompClient.publish({
-        destination: `$${Channel.ROOM}/${user.id}/${Channel.PAINT}`,
-        body: JSON.stringify({
-          action: PaintAction.START,
-          position: { root: { x: e.offsetX, y: e.offsetY } },
-        }),
-      });
+      case PaintAction.MOVE:
+        context.current?.lineTo(
+          message.paint.position!.current!.x,
+          message.paint.position!.current!.y
+        );
+        context.current?.stroke();
+        break;
+
+      case PaintAction.END:
+        context.current?.closePath();
+        break;
+
+      default:
+        break;
     }
   };
 
+  if (user.isActive) {
+    useSubscription(
+      `/${Channel.TOPIC}/${Channel.ROOM}/${user.userId}/${Channel.PAINT}`,
+      (message) => paintExcute(JSON.parse(message.body))
+    );
+  }
+
+  const sendMessage = (message: {
+    deviceId: number;
+    paint: {
+      action: PaintAction;
+      position?: {
+        root?: { x: number; y: number };
+        current?: { x: number; y: number };
+      };
+    };
+  }) => {
+    if (!stompClient) return;
+
+    stompClient.publish({
+      destination: `/${Channel.ROOM}/${user.userId}/${Channel.PAINT}`,
+      body: JSON.stringify(message),
+    });
+  };
+
+  const onMouseDown = (e: MouseEvent) => {
+    setIsPaint(true);
+
+    context.current?.beginPath();
+    context.current?.moveTo(e.offsetX, e.offsetY);
+
+    sendMessage({
+      deviceId: user.deviceId,
+      paint: {
+        action: PaintAction.START,
+        position: { root: { x: e.offsetX, y: e.offsetY } },
+      },
+    });
+  };
+
   const onMouseMove = (e: MouseEvent) => {
-    e.preventDefault();
+    if (!isPaint) return;
 
-    if (!context.current) return;
-    if (paint.action == PaintAction.NONE) return;
+    context.current?.lineTo(e.offsetX, e.offsetY);
+    context.current?.stroke();
 
-    context.current.lineTo(e.offsetX, e.offsetY);
-    context.current.stroke();
-
-    if (stompClient) {
-      stompClient.publish({
-        destination: `${Channel.ROOM}/${user.id}/${Channel.PAINT}`,
-        body: JSON.stringify({
-          action: PaintAction.MOVE,
-          position: { current: { x: e.offsetX, y: e.offsetY } },
-        }),
-      });
-    }
+    sendMessage({
+      deviceId: user.deviceId,
+      paint: {
+        action: PaintAction.MOVE,
+        position: { current: { x: e.offsetX, y: e.offsetY } },
+      },
+    });
   };
 
   const onMouseUp = () => {
     context.current?.closePath();
-    paintUpdate({ action: PaintAction.NONE });
+    setIsPaint(false);
 
-    if (stompClient) {
-      stompClient.publish({
-        destination: `${Channel.ROOM}/${user.id}/${Channel.PAINT}`,
-        body: JSON.stringify({
-          action: PaintAction.NONE,
-        }),
-      });
-    }
+    sendMessage({
+      deviceId: user.deviceId,
+      paint: {
+        action: PaintAction.END,
+      },
+    });
   };
 
   return (
-    <canvas
-      ref={canvas}
-      onMouseDown={(e) => onMouseDown(e.nativeEvent)}
-      onMouseMove={(e) => onMouseMove(e.nativeEvent)}
-      onMouseUp={onMouseUp}
-    ></canvas>
+    <>
+      <canvas
+        ref={canvas}
+        onMouseDown={(e) => onMouseDown(e.nativeEvent)}
+        onMouseMove={(e) => onMouseMove(e.nativeEvent)}
+        onMouseUp={onMouseUp}
+        className="border-2"
+      ></canvas>
+    </>
   );
 };
 export default Canvas;

@@ -2,7 +2,6 @@
 
 import { useUserStore } from "@/store/userStore";
 import { StompSessionProvider } from "react-stomp-hooks";
-import Subscribing from "../subscribing";
 
 const StompProvider = ({ children }: { children: React.ReactNode }) => {
   const user = useUserStore((state) => state.user);
@@ -13,7 +12,6 @@ const StompProvider = ({ children }: { children: React.ReactNode }) => {
         url={process.env.NEXT_PUBLIC_WEBSOCKET_BACKEND_URL!}
         //All options supported by @stomp/stompjs can be used here
       >
-        <Subscribing />
         {children}
       </StompSessionProvider>
     );

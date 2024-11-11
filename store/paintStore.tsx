@@ -1,22 +1,23 @@
 import { create } from "zustand";
 
 export enum PaintAction {
-  NONE = "NONE",
   START = "START",
   MOVE = "MOVE",
+  END = "END",
+}
+
+export enum LineCap {
+  BUTT = "butt",
+  ROUND = "round",
+  SQUARE = "square",
 }
 
 export type Paint = {
-  action: PaintAction;
   boardSize: { width: number; height: number };
   brush: {
     lineWidth: number;
     lineColor: string;
-    lineCap: "butt" | "round" | "square";
-  };
-  position: {
-    root: { x: number; y: number };
-    current: { x: number; y: number };
+    lineCap: LineCap;
   };
 };
 
@@ -25,39 +26,41 @@ interface PaintState {
   update: (newData: {
     boardSize?: { width: number; height: number };
     brush?: {
-      lineWidth: number;
-      lineColor: string;
-      lineCap: "butt" | "round" | "square";
-    };
-  }) => void;
-  paintUpdate: (newData: {
-    action: PaintAction;
-    position?: {
-      root?: { x: number; y: number };
-      current?: { x: number; y: number };
+      lineWidth?: number;
+      lineColor?: string;
+      lineCap?: LineCap;
     };
   }) => void;
 }
 
 export const usePaintStore = create<PaintState>()((set) => ({
   paint: {
-    isPaint: false,
-    action: PaintAction.NONE,
     boardSize: { width: 700, height: 700 },
-    brush: { lineWidth: 1, lineColor: "#000000", lineCap: "round" },
-    position: {
-      root: { x: 0, y: 0 },
-      current: { x: 0, y: 0 },
-    },
+    brush: { lineWidth: 1, lineColor: "#000000", lineCap: LineCap.ROUND },
   },
   update: (newData) =>
-    set((state) => ({ paint: { ...state.paint, ...newData } })),
-  paintUpdate: (newData) =>
     set((state) => ({
       paint: {
-        ...state.paint,
-        action: newData.action,
-        position: { ...state.paint.position, ...newData.position },
+        boardSize: (Object.hasOwn(newData, "boardSize")
+          ? { ...newData.boardSize }
+          : { ...state.paint.boardSize }) as { width: number; height: number },
+        brush: (Object.hasOwn(newData, "brush")
+          ? {
+              lineWidth: Object.hasOwn(newData, "lineWidth")
+                ? newData.brush?.lineWidth
+                : state.paint.brush.lineWidth,
+              lineColor: Object.hasOwn(newData, "lineColor")
+                ? newData.brush?.lineColor
+                : state.paint.brush.lineColor,
+              lineCap: Object.hasOwn(newData, "lineCap")
+                ? newData.brush?.lineCap
+                : state.paint.brush.lineCap,
+            }
+          : { ...state.paint.brush }) as {
+          lineWidth: number;
+          lineColor: string;
+          lineCap: LineCap;
+        },
       },
     })),
 }));
