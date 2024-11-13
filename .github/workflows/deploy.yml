@@ -35,6 +35,4 @@ jobs:
             cd out
             sudo mv * /var/www/html/
             cd /home/${{ secrets.USERNAME }}/Deploy/toolkit_for_everything/toolkit_for_everything-web_frontend
-            git switch dev
-            git pull origin dev
           
