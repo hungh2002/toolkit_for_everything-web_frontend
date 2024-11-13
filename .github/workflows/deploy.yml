@@ -27,14 +27,14 @@ jobs:
           script: |
             sudo -E bash /home/${{ secrets.USERNAME }}/nodesource_setup.sh
             sudo apt-get install -y nodejs
-            cd /home/${{ secrets.USERNAME }}/Projects/toolkit_for_everything/toolkit_for_everything-web_frontend
+            cd /home/${{ secrets.USERNAME }}/Deploy/toolkit_for_everything/toolkit_for_everything-web_frontend
             git switch main
             git pull origin main
             npm ci
             npm run build
             cd out
             sudo mv * /var/www/html/
-            cd /home/${{ secrets.USERNAME }}/Projects/toolkit_for_everything/toolkit_for_everything-web_frontend
+            cd /home/${{ secrets.USERNAME }}/Deploy/toolkit_for_everything/toolkit_for_everything-web_frontend
             git switch dev
             git pull origin dev
           
