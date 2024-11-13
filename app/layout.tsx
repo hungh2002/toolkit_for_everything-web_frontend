@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import UserButton from "@/components/userButton";
+import StompProvider from "@/components/providers/stompProvider";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -28,7 +30,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <StompProvider>
+          <div className="fixed right-0">
+            <UserButton />
+          </div>
+          <main className="w-full h-full">{children}</main>
+        </StompProvider>
       </body>
     </html>
   );
