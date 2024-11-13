@@ -28,5 +28,8 @@ export const useUserStore = create<UserState>()((set) => ({
         isActive: true,
       },
     }),
-  signOut: () => set((state) => ({ user: { ...state.user, isActive: false } })),
+  signOut: () => {
+    localStorage.removeItem("user");
+    set((state) => ({ user: { ...state.user, isActive: false } }));
+  },
 }));
