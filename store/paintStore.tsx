@@ -13,6 +13,7 @@ export enum LineCap {
 }
 
 export type Paint = {
+  imageData: ImageData | null;
   boardSize: { width: number; height: number };
   brush: {
     lineWidth: number;
@@ -24,6 +25,7 @@ export type Paint = {
 interface PaintState {
   paint: Paint;
   update: (newData: {
+    imageData?: ImageData;
     boardSize?: { width: number; height: number };
     brush?: {
       lineWidth?: number;
@@ -35,32 +37,35 @@ interface PaintState {
 
 export const usePaintStore = create<PaintState>()((set) => ({
   paint: {
+    imageData: null,
     boardSize: { width: 700, height: 700 },
     brush: { lineWidth: 1, lineColor: "#000000", lineCap: LineCap.ROUND },
   },
-  update: (newData) =>
-    set((state) => ({
-      paint: {
-        boardSize: (Object.hasOwn(newData, "boardSize")
-          ? { ...newData.boardSize }
-          : { ...state.paint.boardSize }) as { width: number; height: number },
-        brush: (Object.hasOwn(newData, "brush")
-          ? {
-              lineWidth: Object.hasOwn(newData, "lineWidth")
-                ? newData.brush?.lineWidth
-                : state.paint.brush.lineWidth,
-              lineColor: Object.hasOwn(newData, "lineColor")
-                ? newData.brush?.lineColor
-                : state.paint.brush.lineColor,
-              lineCap: Object.hasOwn(newData, "lineCap")
-                ? newData.brush?.lineCap
-                : state.paint.brush.lineCap,
-            }
-          : { ...state.paint.brush }) as {
-          lineWidth: number;
-          lineColor: string;
-          lineCap: LineCap;
-        },
-      },
-    })),
+  update: (newData) => {
+    const currentPaintStatus = usePaintStore.getState().paint;
+
+    if (newData.imageData) {
+      currentPaintStatus.imageData = newData.imageData!;
+    }
+
+    if (newData.boardSize) {
+      currentPaintStatus.boardSize = newData.boardSize!;
+    }
+
+    if (newData.brush) {
+      if (newData.brush?.lineColor) {
+        currentPaintStatus.brush.lineColor = newData.brush.lineColor!;
+      }
+
+      if (newData.brush?.lineWidth) {
+        currentPaintStatus.brush.lineWidth = newData.brush.lineWidth!;
+      }
+
+      if (newData.brush?.lineCap) {
+        currentPaintStatus.brush.lineCap = newData.brush.lineCap!;
+      }
+    }
+
+    set({ paint: { ...currentPaintStatus } });
+  },
 }));

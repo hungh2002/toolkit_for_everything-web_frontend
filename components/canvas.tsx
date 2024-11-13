@@ -9,6 +9,8 @@ import { useStompClient, useSubscription } from "react-stomp-hooks";
 const Canvas = () => {
   const user = useUserStore((state) => state.user);
   const paint = usePaintStore((state) => state.paint);
+  const update = usePaintStore((state) => state.update);
+
   const [isPaint, setIsPaint] = useState(false);
 
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -27,58 +29,17 @@ const Canvas = () => {
     context.current.lineWidth = paint.brush.lineWidth;
     context.current.strokeStyle = paint.brush.lineColor;
     context.current.lineCap = paint.brush.lineCap;
+
+    if (paint.imageData) {
+      context.current?.putImageData(paint.imageData!, 0, 0);
+    }
   }, [
-    paint.brush.lineWidth,
+    paint.boardSize.width,
     paint.boardSize.height,
     paint.brush.lineWidth,
     paint.brush.lineColor,
     paint.brush.lineCap,
   ]);
-
-  const paintExcute = (message: {
-    deviceId: number;
-    paint: {
-      action: PaintAction;
-      position?: {
-        root?: { x: number; y: number };
-        current?: { x: number; y: number };
-      };
-    };
-  }) => {
-    if (user.deviceId == message.deviceId) return;
-
-    switch (message.paint.action) {
-      case PaintAction.START:
-        context.current?.beginPath();
-        context.current?.moveTo(
-          message.paint.position!.root!.x,
-          message.paint.position!.root!.y
-        );
-        break;
-
-      case PaintAction.MOVE:
-        context.current?.lineTo(
-          message.paint.position!.current!.x,
-          message.paint.position!.current!.y
-        );
-        context.current?.stroke();
-        break;
-
-      case PaintAction.END:
-        context.current?.closePath();
-        break;
-
-      default:
-        break;
-    }
-  };
-
-  if (user.isActive) {
-    useSubscription(
-      `/${Channel.TOPIC}/${Channel.ROOM}/${user.userId}/${Channel.PAINT}`,
-      (message) => paintExcute(JSON.parse(message.body))
-    );
-  }
 
   const sendMessage = (message: {
     deviceId: number;
@@ -98,56 +59,127 @@ const Canvas = () => {
     });
   };
 
-  const onMouseDown = (e: MouseEvent) => {
+  const beginPaint = (x: number, y: number, send: boolean) => {
     setIsPaint(true);
 
     context.current?.beginPath();
-    context.current?.moveTo(e.offsetX, e.offsetY);
+    context.current?.moveTo(x, y);
 
-    sendMessage({
-      deviceId: user.deviceId,
-      paint: {
-        action: PaintAction.START,
-        position: { root: { x: e.offsetX, y: e.offsetY } },
-      },
-    });
+    if (send) {
+      sendMessage({
+        deviceId: user.deviceId,
+        paint: {
+          action: PaintAction.START,
+          position: { root: { x: x, y: y } },
+        },
+      });
+    }
   };
 
-  const onMouseMove = (e: MouseEvent) => {
+  const painting = (x: number, y: number, send: boolean) => {
     if (!isPaint) return;
 
-    context.current?.lineTo(e.offsetX, e.offsetY);
+    context.current?.lineTo(x, y);
     context.current?.stroke();
 
-    sendMessage({
-      deviceId: user.deviceId,
-      paint: {
-        action: PaintAction.MOVE,
-        position: { current: { x: e.offsetX, y: e.offsetY } },
-      },
-    });
+    if (send) {
+      sendMessage({
+        deviceId: user.deviceId,
+        paint: {
+          action: PaintAction.MOVE,
+          position: { current: { x: x, y: y } },
+        },
+      });
+    }
   };
 
-  const onMouseUp = () => {
-    context.current?.closePath();
+  const endPaint = (send: boolean) => {
     setIsPaint(false);
+    context.current?.closePath();
+    context.current?.getImageData(
+      0,
+      0,
+      paint.boardSize.width,
+      paint.boardSize.height
+    );
 
-    sendMessage({
-      deviceId: user.deviceId,
-      paint: {
-        action: PaintAction.END,
-      },
+    update({
+      imageData: context.current?.getImageData(
+        0,
+        0,
+        paint.boardSize.width,
+        paint.boardSize.height
+      ),
     });
+
+    if (send) {
+      sendMessage({
+        deviceId: user.deviceId,
+        paint: {
+          action: PaintAction.END,
+        },
+      });
+    }
   };
+
+  const paintExcute = (message: {
+    deviceId: number;
+    paint: {
+      action: PaintAction;
+      position?: {
+        root?: { x: number; y: number };
+        current?: { x: number; y: number };
+      };
+    };
+  }) => {
+    if (user.deviceId == message.deviceId) return;
+
+    switch (message.paint.action) {
+      case PaintAction.START:
+        beginPaint(
+          message.paint.position!.root!.x,
+          message.paint.position!.root!.y,
+          false
+        );
+        break;
+
+      case PaintAction.MOVE:
+        painting(
+          message.paint.position!.current!.x,
+          message.paint.position!.current!.y,
+          false
+        );
+        break;
+
+      case PaintAction.END:
+        endPaint(false);
+        break;
+
+      default:
+        break;
+    }
+  };
+
+  if (user.isActive) {
+    useSubscription(
+      `/${Channel.TOPIC}/${Channel.ROOM}/${user.userId}/${Channel.PAINT}`,
+      (message) => paintExcute(JSON.parse(message.body))
+    );
+  }
 
   return (
     <>
       <canvas
+        id="canvas"
         ref={canvas}
-        onMouseDown={(e) => onMouseDown(e.nativeEvent)}
-        onMouseMove={(e) => onMouseMove(e.nativeEvent)}
-        onMouseUp={onMouseUp}
-        className="border-2"
+        onMouseDown={(e) =>
+          beginPaint(e.nativeEvent.offsetX, e.nativeEvent.offsetY, true)
+        }
+        onMouseMove={(e) =>
+          painting(e.nativeEvent.offsetX, e.nativeEvent.offsetY, true)
+        }
+        onMouseUp={() => endPaint(true)}
+        className="border-2 m-10"
       ></canvas>
     </>
   );

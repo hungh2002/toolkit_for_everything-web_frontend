@@ -8,7 +8,7 @@ const Item = () => {
   const searchParams = useSearchParams();
   const itemId = searchParams.get("item-id");
   return (
-    <div>
+    <div className=" flex justify-center">
       <BrushTools />
       <Canvas />
     </div>
