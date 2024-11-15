@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,9 +18,8 @@ const SignUp = () => {
     const { status } = await axios.post(`/sign-up`, formData);
 
     if (status == 200) {
-      const signInResponse = await axios.post<User>(`/sign-up`, {
-        email: formData.get("email"),
-        password: formData.get("password"),
+      const signInResponse = await axios.post<User>(`/sign-in`, {
+        body: formData,
       });
 
       if (signInResponse.status == 200) {

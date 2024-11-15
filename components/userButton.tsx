@@ -17,7 +17,7 @@ import { FormEvent, useEffect } from "react";
 import { axios } from "@/config/axios";
 import UserAvatar from "./avatar";
 
-const userButton = () => {
+const UserButton = () => {
   const user = useUserStore((state) => state.user);
   const signIn = useUserStore((state) => state.signIn);
 
@@ -55,7 +55,7 @@ const userButton = () => {
           <DialogHeader>
             <DialogTitle>SIGN IN</DialogTitle>
             <DialogDescription>
-              <Link href="#">sign up</Link>
+              <Link href="/sign-up">sign up</Link>
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={onSignIn}>
@@ -76,4 +76,4 @@ const userButton = () => {
     );
   }
 };
-export default userButton;
+export default UserButton;
