@@ -6,7 +6,7 @@ name: deploy to vps
 on:
   # Triggers the workflow on push or pull request events but only for the "main" branch
   push:
-    branches: [ "main" ]
+    branches: ["main"]
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -30,9 +30,6 @@ jobs:
             cd /home/${{ secrets.USERNAME }}/Projects/toolkit_for_everything/toolkit_for_everything-web_frontend
             git switch main
             git pull origin main
-            npm ci
+            npm ci -f
             npm run build
-            sudo mv ./out/~ /var/www/html/
-            git switch dev
-            git pull origin dev
-          
+            pm2 start /home/hungh2002/Deploy/ecosystem.config.js

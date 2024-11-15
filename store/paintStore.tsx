@@ -1,71 +1,57 @@
 import { create } from "zustand";
 
 export enum PaintAction {
+  NONE = "NONE",
   START = "START",
   MOVE = "MOVE",
   END = "END",
 }
 
-export enum LineCap {
-  BUTT = "butt",
-  ROUND = "round",
-  SQUARE = "square",
-}
-
-export type Paint = {
-  imageData: ImageData | null;
-  boardSize: { width: number; height: number };
-  brush: {
-    lineWidth: number;
-    lineColor: string;
-    lineCap: LineCap;
-  };
-};
-
 interface PaintState {
-  paint: Paint;
-  update: (newData: {
-    imageData?: ImageData;
-    boardSize?: { width: number; height: number };
-    brush?: {
-      lineWidth?: number;
-      lineColor?: string;
-      lineCap?: LineCap;
-    };
-  }) => void;
+  action: PaintAction;
+  position: {
+    root: { x: number; y: number };
+    current: { x: number; y: number };
+  };
+  isSendWebSocketMessage: boolean;
+  update: {
+    position: (
+      newAction: PaintAction,
+      newPosition: Partial<{
+        [key: string]: { x: number; y: number };
+        root: { x: number; y: number };
+        current: { x: number; y: number };
+      }>,
+      newIsSendWebSocketMessage: boolean
+    ) => void;
+    isSendWebSocketMessage: (newIsSendWebSocketMessage: boolean) => void;
+  };
 }
 
 export const usePaintStore = create<PaintState>()((set) => ({
-  paint: {
-    imageData: null,
-    boardSize: { width: 700, height: 700 },
-    brush: { lineWidth: 1, lineColor: "#000000", lineCap: LineCap.ROUND },
+  action: PaintAction.NONE,
+  position: {
+    root: { x: 0, y: 0 },
+    current: { x: 0, y: 0 },
   },
-  update: (newData) => {
-    const currentPaintStatus = usePaintStore.getState().paint;
-
-    if (newData.imageData) {
-      currentPaintStatus.imageData = newData.imageData!;
-    }
-
-    if (newData.boardSize) {
-      currentPaintStatus.boardSize = newData.boardSize!;
-    }
-
-    if (newData.brush) {
-      if (newData.brush?.lineColor) {
-        currentPaintStatus.brush.lineColor = newData.brush.lineColor!;
+  isSendWebSocketMessage: false,
+  update: {
+    position: (newAction, newPosition, newIsSendWebSocketMessage) => {
+      if (newPosition) {
+        for (const [key, value] of Object.entries(newPosition)) {
+          if (!value) {
+            delete newPosition[key];
+          }
+        }
       }
 
-      if (newData.brush?.lineWidth) {
-        currentPaintStatus.brush.lineWidth = newData.brush.lineWidth!;
-      }
-
-      if (newData.brush?.lineCap) {
-        currentPaintStatus.brush.lineCap = newData.brush.lineCap!;
-      }
-    }
-
-    set({ paint: { ...currentPaintStatus } });
+      set((state) => ({
+        action: newAction,
+        position: { ...state.position, ...newPosition },
+        isSendWebSocketMessage: newIsSendWebSocketMessage,
+      }));
+    },
+    isSendWebSocketMessage: (newIsSendWebSocketMessage: boolean) =>
+      set({ isSendWebSocketMessage: newIsSendWebSocketMessage }),
   },
 }));

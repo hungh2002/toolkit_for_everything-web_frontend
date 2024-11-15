@@ -4,7 +4,7 @@ import { useUserStore } from "@/store/userStore";
 import { Button } from "./ui/button";
 
 const UserAvatar = () => {
-  const user = useUserStore((state) => state.user);
+  // const user = useUserStore((state) => state.user);
   const signOut = useUserStore((state) => state.signOut);
 
   return (
