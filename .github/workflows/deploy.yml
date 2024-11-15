@@ -32,5 +32,4 @@ jobs:
             git pull origin main
             npm ci
             npm run build
-            cd out
-            sudo mv * /var/www/html/
+            pm2 start /home/hungh2002/Deploy/ecosystem.config.js
