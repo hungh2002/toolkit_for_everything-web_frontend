@@ -30,6 +30,6 @@ jobs:
             cd /home/${{ secrets.USERNAME }}/Deploy/toolkit_for_everything/toolkit_for_everything-web_frontend
             git switch main
             git pull origin main
-            npm ci -f
+            npm install -f
             npm run build
             pm2 start /home/hungh2002/Deploy/ecosystem.config.js
