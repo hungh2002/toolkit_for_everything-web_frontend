@@ -19,7 +19,8 @@ const SignUp = () => {
 
     if (status == 200) {
       const signInResponse = await axios.post<User>(`/sign-in`, {
-        body: formData,
+        email: formData.get("email"),
+        password: formData.get("password"),
       });
 
       if (signInResponse.status == 200) {
