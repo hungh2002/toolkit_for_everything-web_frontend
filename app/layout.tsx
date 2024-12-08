@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import UserButton from "@/components/userButton";
-import StompProvider from "@/components/providers/stompProvider";
+import { ThemeProvider } from "@/components/providers/themeProvider";
+import UserTable from "@/components/userTable";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -26,16 +26,24 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      {/* suppressHydrationWarning --> https://nextjs.org/docs/messages/react-hydration-error#solution-3-using-suppresshydrationwarning */}
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <StompProvider>
-          <div className="fixed right-0">
-            <UserButton />
-          </div>
-          <main className="w-full h-full">{children}</main>
-        </StompProvider>
+        <main className="w-full h-full">
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <div className="fixed top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2">
+              <UserTable />
+            </div>
+            {children}
+          </ThemeProvider>
+        </main>
       </body>
     </html>
   );
