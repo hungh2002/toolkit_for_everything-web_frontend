@@ -1,35 +1,36 @@
 import { create } from "zustand";
 
-export type User = {
+export interface UserState {
+  userTableIsOpen: boolean;
   isActive: boolean;
-  deviceId: number;
   userId: number;
   userName: string;
-};
-
-interface UserState {
-  user: User;
-  signIn: (newUser: { userId: number; userName: string }) => void;
-  signOut: () => void;
+  update: {
+    userTableIsOpen: (isOpen: boolean) => void;
+    signIn: (newUser: { userId: number; userName: string }) => void;
+    signOut: () => void;
+  };
 }
 
 export const useUserStore = create<UserState>()((set) => ({
-  user: {
-    isActive: false,
-    deviceId: 0,
-    userId: 0,
-    userName: "",
-  },
-  signIn: (newUser) =>
-    set({
-      user: {
-        ...newUser,
-        deviceId: Date.now(),
+  userTableIsOpen: false,
+  isActive: false,
+  userId: -1,
+  userName: "",
+  update: {
+    userTableIsOpen: (isOpen: boolean) => set({ userTableIsOpen: isOpen }),
+    signIn: (newUser) => {
+      localStorage.setItem("user", JSON.stringify(newUser));
+
+      set({
+        userId: newUser.userId,
+        userName: newUser.userName,
         isActive: true,
-      },
-    }),
-  signOut: () => {
-    localStorage.removeItem("user");
-    set((state) => ({ user: { ...state.user, isActive: false } }));
+      });
+    },
+    signOut: () => {
+      localStorage.removeItem("user");
+      set({ isActive: false });
+    },
   },
 }));
